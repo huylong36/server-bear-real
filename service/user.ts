@@ -2,7 +2,7 @@ import { UserInfo } from "../modules/shared/model/user";
 import mongoose from 'mongoose';
 import { UserModel } from "../src/database/model/users";
 export default class UserService {
-    registerUser = async (body: Partial<UserInfo>) => {
+    registerUser = async (body: UserInfo) => {
         const {account, password} = body;
         const exitsUser = await UserModel.findOne({
             $or: [

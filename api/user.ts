@@ -1,43 +1,17 @@
+import EndPoint from "../modules/shared/common/endpoint";
 import { UserInfo } from "../modules/shared/model/user";
-import mongoose from 'mongoose';
-import { UserModel } from "../src/database/model/users";
-export default class UserService {
-    registerUser = async (body: Partial<UserInfo>) => {
-        const {account, password} = body;
-        const exitsUser = await UserModel.findOne({
-            $or: [
-                {account}
-                
-            ]
+import UserService from "../service/user";
+import asyncHandler from '../utils/async_handle';
+import express from 'express';
+const userRouter = express.Router();
+const userService = new UserService();
 
-        })
-        if(exitsUser) {
-            let duplicateName: string[] = [];
-            if(exitsUser.account === account) duplicateName.push("account");
-            return {
-                duplicateName,
-                code: 2
-            }
-        }
-        // create account 
-        await UserModel.create(new UserInfo(body))
-        return {
-            code: 1
-        }
+userRouter.post(EndPoint.REGISTER, asyncHandler(async (req, res) => {
+    const body: { UserInfo } = req.body;
+    if (!body) {
+        const responseDb = await userService.registerUser(body);
+        res.json(responseDb);
+    } else {
+        res.sendStatus(403); // bad request
     }
-    saveNewUser = async (body: { userInfo: UserInfo }): Promise<UserInfo | null> => {
-        const session = await mongoose.startSession();
-        session.startTransaction();
-        try {
-            const resUser = await new UserModel(body.userInfo).save();
-            resUser.$session();
-            session.commitTransaction();
-            return resUser;
-        } catch (err) {
-            session.abortTransaction();
-            return null
-        } finally {
-            session.endSession();
-        }
-    }
-}
+}));
