@@ -1,43 +1,46 @@
+import bycrypt from 'bcrypt';
+import dotenv from 'dotenv';
+import BearConfig from "../modules/shared/common/configs";
 import { UserInfo } from "../modules/shared/model/user";
-import mongoose from 'mongoose';
 import { UserModel } from "../src/database/model/users";
+dotenv.config();
 export default class UserService {
     registerUser = async (body: UserInfo) => {
-        const {account, password} = body;
-        const exitsUser = await UserModel.findOne({
-            $or: [
-                {account}
-            ]
-
-        })
-        if(exitsUser) {
+        const exitsUser = await UserModel.findOne({ account: body.account });
+        if (exitsUser) {
             let duplicateName: string[] = [];
-            if(exitsUser.account === account) duplicateName.push("account");
+            if (exitsUser.account === body.account) duplicateName.push("account");
             return {
                 duplicateName,
-                code: 2
+                code: BearConfig.REGISTER_ACCOUNT_IS_USED
             }
         }
-        // create account 
-        await UserModel.create(new UserInfo(body));
-        console.log("vaooo");
-        return {
-            code: 1
+        const salt = await bycrypt.genSalt(10);
+        body.password = await bycrypt.hash(body.password, salt);
+        let checkUserAcc: UserInfo | null = await UserModel.findOne({ account: body.account });
+        if (checkUserAcc) {
+            return BearConfig.REGISTER_ACCOUNT_IS_USED;
+        } else {
+            await UserModel.create(body);
+            return BearConfig.REGISTER_SUCCESS;
         }
     }
-    saveNewUser = async (body: { userInfo: UserInfo }): Promise<UserInfo | null> => {
-        const session = await mongoose.startSession();
-        session.startTransaction();
-        try {
-            const resUser = await new UserModel(body.userInfo).save();
-            resUser.$session();
-            session.commitTransaction();
-            return resUser;
-        } catch (err) {
-            session.abortTransaction();
-            return null
-        } finally {
-            session.endSession();
+    login = async (body: { account: string, password: string }): Promise<UserInfo> => {
+        let userInfo = new UserInfo({ ...body });
+        let checkUserAcc: UserInfo | null = await UserModel.findOne({ account: userInfo.account });
+        if (checkUserAcc !== null) {
+            let newPass = await bycrypt.compare(body.password, checkUserAcc.password);
+            if (newPass) {
+                if (checkUserAcc) {
+                    userInfo = new UserInfo(checkUserAcc);
+                    userInfo.loginCode = BearConfig.LOGIN_SUCCESS;
+                } else {
+                    userInfo.loginCode = BearConfig.LOGIN_ACCOUNT_NOT_EXIST;
+                }
+            }else{
+                userInfo.loginCode = BearConfig.LOGIN_WRONG_PASSWORD;
+            }
         }
+        return userInfo;
     }
 }
