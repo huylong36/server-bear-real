@@ -1,27 +1,27 @@
 import express from 'express' ;
-const cors = require('cors') ;
-const mongoose = require('mongoose');
-const dotenv = require('dotenv')
+import cors  from 'cors' ;
+import mongoose  from 'mongoose';
+import dotenv  from'dotenv'
 const argon2 = require('argon2')
 const bodyParser = require('body-parser')
-import { webRouters } from './routers/index';
+import {userRouter } from './routers/index';
 import http, { Server } from "http";
 import cookieParser from 'cookie-parser';
 import { errorHandler, notFoundHandler } from './errorHandler/errorHandle';
 const app = express();
-const PORT = process.env.port || 5000;
+
 dotenv.config()
 const URl_  = 'mongodb+srv://admin:admin@cluster0.snb5pwp.mongodb.net/?retryWrites=true&w=majority'
 const PREFIX_API = "/api"
 
 
+const PORT = process.env.port || 5000;
 class App {
     public app: express.Application;
     public server: Server;
     public port: string | number;
     private config() {
         const NODE_ENV = process.env.NODE_ENV || 'development';
-        // this.app.use(helmet());
         this.app.use(cookieParser());
         this.app.use(cors({
             origin: NODE_ENV === 'production' ? (process.env.ALLOWED_ORIGIN ? process.env.ALLOWED_ORIGIN.split(',') : true) : true,
@@ -44,10 +44,10 @@ class App {
     run() {
         const connectDB = async () =>{
             try {
+                mongoose.set('strictQuery', false); 
                 await mongoose.connect(URl_ ,{
+                    
                    
-                    useNewUrlParser: true,
-                    useUnifiedTopology: true,
                 });
             } catch (error) {
                 console.log('error' ,error);
@@ -58,18 +58,16 @@ class App {
     }
     private useAPI() {
         // Web
-        this.app.use(PREFIX_API, webRouters);
+        this.app.use("/api", userRouter);
         this.app.use(errorHandler);
         this.app.use(notFoundHandler);
     }
 }
-
-app.use(cors());
- app.use(bodyParser.json()) // for parsing application/json
- app.use(bodyParser.urlencoded({ extended: true }))
-
 app.listen(PORT,()=>{
     console.log(`server is running port  ${PORT}`);
 })
+
+const myApp = new App();
+myApp.run();
 
 export { App };

@@ -1,5 +1,7 @@
 import { Router } from 'express';
+import userRouter  from '../api/user';
+// const router = Router();
 
-const router = Router();
 
-export { router as webRouters };
+// router.use(userRouter);
+export {userRouter };

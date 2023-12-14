@@ -7,7 +7,6 @@ export default class UserService {
         const exitsUser = await UserModel.findOne({
             $or: [
                 {account}
-                
             ]
 
         })
@@ -20,7 +19,8 @@ export default class UserService {
             }
         }
         // create account 
-        await UserModel.create(new UserInfo(body))
+        await UserModel.create(new UserInfo(body));
+        console.log("vaooo");
         return {
             code: 1
         }
