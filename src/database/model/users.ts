@@ -11,7 +11,6 @@ const UserInfoSchema = new mongoose.Schema<UserDoc, IUserInfo>(
     {
         account: String,
         name: String,
-        loginCode :{type:Number, default: -1},
         password:String,
         address:String,
         email:String,

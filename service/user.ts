@@ -1,5 +1,6 @@
 import bycrypt from 'bcrypt';
 import dotenv from 'dotenv';
+import jwt from 'jsonwebtoken';
 import BearConfig from "../modules/shared/common/configs";
 import { UserInfo } from "../modules/shared/model/user";
 import { UserModel } from "../src/database/model/users";
@@ -7,40 +8,40 @@ dotenv.config();
 export default class UserService {
     registerUser = async (body: UserInfo) => {
         const exitsUser = await UserModel.findOne({ account: body.account });
+        let loginCode = BearConfig.REGISTER_FAILED;
         if (exitsUser) {
             let duplicateName: string[] = [];
             if (exitsUser.account === body.account) duplicateName.push("account");
             return {
                 duplicateName,
-                code: BearConfig.REGISTER_ACCOUNT_IS_USED
+                loginCode: BearConfig.REGISTER_ACCOUNT_IS_USED
             }
         }
         const salt = await bycrypt.genSalt(10);
         body.password = await bycrypt.hash(body.password, salt);
         let checkUserAcc: UserInfo | null = await UserModel.findOne({ account: body.account });
         if (checkUserAcc) {
-            return BearConfig.REGISTER_ACCOUNT_IS_USED;
+            return loginCode = BearConfig.REGISTER_ACCOUNT_IS_USED;
         } else {
             await UserModel.create(body);
-            return BearConfig.REGISTER_SUCCESS;
+            return loginCode = BearConfig.REGISTER_SUCCESS;
         }
     }
-    login = async (body: { account: string, password: string }): Promise<UserInfo> => {
+    login = async (body: { account: string, password: string }) => {
         let userInfo = new UserInfo({ ...body });
         let checkUserAcc: UserInfo | null = await UserModel.findOne({ account: userInfo.account });
         if (checkUserAcc !== null) {
             let newPass = await bycrypt.compare(body.password, checkUserAcc.password);
+            let loginCode = BearConfig.LOGIN_FAILED;
             if (newPass) {
-                if (checkUserAcc) {
-                    userInfo = new UserInfo(checkUserAcc);
-                    userInfo.loginCode = BearConfig.LOGIN_SUCCESS;
-                } else {
-                    userInfo.loginCode = BearConfig.LOGIN_ACCOUNT_NOT_EXIST;
-                }
-            }else{
-                userInfo.loginCode = BearConfig.LOGIN_WRONG_PASSWORD;
+                const salt = await bycrypt.genSalt(10);
+                userInfo = new UserInfo(checkUserAcc);
+                const accessToken = jwt.sign({ userId: userInfo?._id }, salt);
+                loginCode = BearConfig.LOGIN_SUCCESS;
+                return { userInfo, loginCode, accessToken };
             }
+            return { loginCode: BearConfig.LOGIN_WRONG_PASSWORD };
         }
-        return userInfo;
+        return { loginCode: BearConfig.LOGIN_ACCOUNT_NOT_EXIST };
     }
 }

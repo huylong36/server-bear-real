@@ -1,16 +1,16 @@
-import express ,{Request,Response}from 'express';
-import BearConfig from '../modules/shared/common/configs';
+import dotenv from 'dotenv';
+import express, { Request, Response } from 'express';
 import EndPoint from "../modules/shared/common/endpoint";
 import { UserInfo } from '../modules/shared/model/user';
 import UserService from "../service/user";
 import asyncHandler from '../utils/async_handle';
 const userRouter = express.Router();
 const userService = new UserService();
+dotenv.config();
 
 userRouter.post(EndPoint.REGISTER, asyncHandler(async (req : Request, res:Response) => {
     const userInfo : UserInfo = req.body;
     if (userInfo.account) {
-        userInfo.loginCode == BearConfig.REGISTER_SUCCESS
         const responseDb = await userService.registerUser(userInfo);
         res.json(responseDb);
     } else {
@@ -23,7 +23,7 @@ userRouter.post(EndPoint.LOGIN, asyncHandler(async (req : Request, res:Response)
         res.sendStatus(403)
     } else {
         const userLogin = await userService.login(body);
-        return res.json(userLogin);
+        return res.json(userLogin)
     }
 }));
 
