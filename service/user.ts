@@ -6,7 +6,7 @@ import { UserInfo } from "../modules/shared/model/user";
 import { UserModel } from "../src/database/model/users";
 dotenv.config();
 export default class UserService {
-    registerUser = async (body: UserInfo) => {
+    registerUser = async (body: { account: string, password: string }) => {
         const exitsUser = await UserModel.findOne({ account: body.account });
         let loginCode = BearConfig.REGISTER_FAILED;
         if (exitsUser) {
@@ -19,13 +19,10 @@ export default class UserService {
         }
         const salt = await bycrypt.genSalt(10);
         body.password = await bycrypt.hash(body.password, salt);
-        let checkUserAcc: UserInfo | null = await UserModel.findOne({ account: body.account });
-        if (checkUserAcc) {
-            return loginCode = BearConfig.REGISTER_ACCOUNT_IS_USED;
-        } else {
-            await UserModel.create(body);
-            return loginCode = BearConfig.REGISTER_SUCCESS;
-        }
+        const userInfo = await UserModel.create(body);
+        const accessToken = jwt.sign({ userId: userInfo?._id }, salt);
+        loginCode = BearConfig.REGISTER_SUCCESS
+        return {loginCode ,accessToken}
     }
     login = async (body: { account: string, password: string }) => {
         let userInfo = new UserInfo({ ...body });
