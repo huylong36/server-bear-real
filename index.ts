@@ -52,8 +52,7 @@ class App {
         const NODE_ENV = process.env.NODE_ENV || 'development';
         this.app.use(cookieParser());
         this.app.use(cors({
-            origin: "*"
-                ? (process.env.ALLOWED_ORIGIN ? process.env.ALLOWED_ORIGIN.split(',') : true) : true,
+            origin: process.env.ALLOWED_ORIGIN ? process.env.ALLOWED_ORIGIN.split(',') : true,
             credentials: true,
             allowedHeaders: 'X-PINGOTHER, Content-Type, Authorization, X-Forwarded-For, x-requested-with, x-access-token',
             methods: 'GET, POST, PUT, PATCH, DELETE, HEAD, OPTIONS',
