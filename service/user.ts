@@ -22,7 +22,7 @@ export default class UserService {
         const userInfo = await UserModel.create(body);
         const accessToken = jwt.sign({ userId: userInfo?._id }, salt);
         loginCode = BearConfig.REGISTER_SUCCESS
-        return {loginCode ,accessToken}
+        return { loginCode, accessToken }
     }
     login = async (body: { account: string, password: string }) => {
         let userInfo = new UserInfo({ ...body });
@@ -41,4 +41,23 @@ export default class UserService {
         }
         return { loginCode: BearConfig.LOGIN_ACCOUNT_NOT_EXIST };
     }
+
+    getUser = async (args: { _id: string }) => {
+        const { _id } = args;
+        const user = await UserModel.findOne({ _id }).select({ "password": 0 })
+        if (!user) {
+            return {
+                code: BearConfig.LOGIN_ACCOUNT_NOT_EXIST,
+                data: null
+            }
+        }
+        const data = {
+            ...new UserInfo(user)
+        }
+        return {
+            code: BearConfig.LOGIN_SUCCESS,
+            data
+        }
+    }
+
 }
